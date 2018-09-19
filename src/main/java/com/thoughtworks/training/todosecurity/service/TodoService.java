@@ -2,7 +2,6 @@ package com.thoughtworks.training.todosecurity.service;
 
 import com.google.common.primitives.Booleans;
 import com.thoughtworks.training.todosecurity.exception.BadRequestException;
-import com.thoughtworks.training.todosecurity.exception.ForbiddenException;
 import com.thoughtworks.training.todosecurity.exception.NotFoundException;
 import com.thoughtworks.training.todosecurity.model.Todo;
 import com.thoughtworks.training.todosecurity.model.User;
@@ -11,6 +10,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,13 +27,10 @@ public class TodoService {
     @Autowired
     private AuthorizationService authorizationService;
 
+    @PostAuthorize("returnObject.user.id == authentication.principal.id")
     public Todo get(Integer id) {
-        User user = authorizationService.getCurrentUser();
         Todo todo = Optional.ofNullable(todoRepository.findOne(id))
                 .orElseThrow(NotFoundException::new);
-        if (!todo.getUser().getId().equals(user.getId())) {
-            throw new ForbiddenException();
-        }
         return todo;
     }
 
