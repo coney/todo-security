@@ -1,10 +1,11 @@
 package com.thoughtworks.training.todosecurity.service;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Booleans;
 import com.thoughtworks.training.todosecurity.exception.BadRequestException;
+import com.thoughtworks.training.todosecurity.exception.ForbiddenException;
 import com.thoughtworks.training.todosecurity.exception.NotFoundException;
 import com.thoughtworks.training.todosecurity.model.Todo;
+import com.thoughtworks.training.todosecurity.model.User;
 import com.thoughtworks.training.todosecurity.repository.TodoRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,12 +24,25 @@ public class TodoService {
     @Autowired
     private TagService tagService;
 
+    @Autowired
+    private AuthorizationService authorizationService;
+
+    public Todo getWithToken(String token, Integer id) {
+        User user = authorizationService.verify(token);
+        Todo todo = get(id);
+        if (!todo.getUser().getId().equals(user.getId())) {
+            throw new ForbiddenException();
+        }
+        return todo;
+    }
     public Todo get(Integer id) {
         return Optional.ofNullable(todoRepository.findOne(id))
                 .orElseThrow(NotFoundException::new);
     }
 
-    public Todo create(Todo todo) {
+    public Todo create(String token, Todo todo) {
+        User user = authorizationService.verify(token);
+        todo.setUser(user);
         return todoRepository.save(bindTags(todo));
     }
 
@@ -48,19 +61,20 @@ public class TodoService {
         todoRepository.delete(get(id));
     }
 
-    public Page<Todo> list(Optional<String> tag, Optional<LocalDate> from, Optional<LocalDate> to, Pageable pageable) {
+    public Page<Todo> list(String token, Optional<String> tag, Optional<LocalDate> from, Optional<LocalDate> to, Pageable pageable) {
+        User user = authorizationService.verify(token);
         if (Booleans.countTrue(from.isPresent(), to.isPresent()) == 1) {
             throw new BadRequestException("from & to must appear in same time");
         }
         // Specification is a better choice
         if (from.isPresent() && tag.isPresent()) {
-            return todoRepository.findAllByTags_NameInAndDueDateIsBetween(tag.get(), from.get(), to.get(), pageable);
+            return todoRepository.findAllByUser_IdAndTags_NameInAndDueDateIsBetween(user.getId(), tag.get(), from.get(), to.get(), pageable);
         } else if (from.isPresent()) {
-            return todoRepository.findAllByDueDateIsBetween(from.get(), to.get(), pageable);
+            return todoRepository.findAllByUser_IdAndDueDateIsBetween(user.getId(), from.get(), to.get(), pageable);
         } else if (tag.isPresent()) {
-            return todoRepository.findAllByTags_NameIn(tag.get(), pageable);
+            return todoRepository.findAllByUser_IdAndTags_NameIn(user.getId(), tag.get(), pageable);
         } else {
-            return todoRepository.findAll(pageable);
+            return todoRepository.findAllByUser_Id(user.getId(), pageable);
         }
     }
 }

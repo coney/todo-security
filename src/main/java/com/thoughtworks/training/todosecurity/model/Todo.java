@@ -18,6 +18,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,6 +48,9 @@ public class Todo {
     @JsonIgnore
     private List<Tag> tags;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @JsonProperty("tags")
     public List<String> getTagNames() {

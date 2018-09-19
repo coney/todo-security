@@ -10,9 +10,11 @@ import java.time.LocalDate;
 
 @Repository
 public interface TodoRepository extends JpaRepository<Todo, Integer> {
-    Page<Todo> findAllByTags_NameInAndDueDateIsBetween(String tag, LocalDate from, LocalDate to, Pageable pageable);
+    Page<Todo> findAllByUser_IdAndTags_NameInAndDueDateIsBetween(Integer userId, String tag, LocalDate from, LocalDate to, Pageable pageable);
 
-    Page<Todo> findAllByDueDateIsBetween(LocalDate from, LocalDate to, Pageable pageable);
+    Page<Todo> findAllByUser_IdAndDueDateIsBetween(Integer userId, LocalDate from, LocalDate to, Pageable pageable);
 
-    Page<Todo> findAllByTags_NameIn(String tag, Pageable pageable);
+    Page<Todo> findAllByUser_IdAndTags_NameIn(Integer userId, String tag, Pageable pageable);
+
+    Page<Todo> findAllByUser_Id(Integer userId, Pageable pageable);
 }
