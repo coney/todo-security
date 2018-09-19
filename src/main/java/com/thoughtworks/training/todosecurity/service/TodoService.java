@@ -27,21 +27,18 @@ public class TodoService {
     @Autowired
     private AuthorizationService authorizationService;
 
-    public Todo getWithToken(String token, Integer id) {
-        User user = authorizationService.verify(token);
-        Todo todo = get(id);
+    public Todo get(Integer id) {
+        User user = authorizationService.getCurrentUser();
+        Todo todo = Optional.ofNullable(todoRepository.findOne(id))
+                .orElseThrow(NotFoundException::new);
         if (!todo.getUser().getId().equals(user.getId())) {
             throw new ForbiddenException();
         }
         return todo;
     }
-    public Todo get(Integer id) {
-        return Optional.ofNullable(todoRepository.findOne(id))
-                .orElseThrow(NotFoundException::new);
-    }
 
-    public Todo create(String token, Todo todo) {
-        User user = authorizationService.verify(token);
+    public Todo create(Todo todo) {
+        User user = authorizationService.getCurrentUser();
         todo.setUser(user);
         return todoRepository.save(bindTags(todo));
     }
@@ -61,8 +58,8 @@ public class TodoService {
         todoRepository.delete(get(id));
     }
 
-    public Page<Todo> list(String token, Optional<String> tag, Optional<LocalDate> from, Optional<LocalDate> to, Pageable pageable) {
-        User user = authorizationService.verify(token);
+    public Page<Todo> list(Optional<String> tag, Optional<LocalDate> from, Optional<LocalDate> to, Pageable pageable) {
+        User user = authorizationService.getCurrentUser();
         if (Booleans.countTrue(from.isPresent(), to.isPresent()) == 1) {
             throw new BadRequestException("from & to must appear in same time");
         }

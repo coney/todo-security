@@ -4,7 +4,10 @@ import com.thoughtworks.training.todosecurity.exception.UnauthenticatedException
 import com.thoughtworks.training.todosecurity.model.User;
 import com.thoughtworks.training.todosecurity.repository.TokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class AuthorizationService {
@@ -27,4 +30,8 @@ public class AuthorizationService {
         return userService.get(userId);
     }
 
+    public User getCurrentUser() {
+        return (User) Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
+                .orElseThrow(UnauthenticatedException::new).getPrincipal();
+    }
 }

@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -35,20 +33,18 @@ public class TodoController {
     public Page<Todo> list(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
                            @RequestParam(required = false) String tag,
-                           @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
                            Pageable pageable) {
-        return todoService.list(token, Optional.ofNullable(tag), Optional.ofNullable(from), Optional.ofNullable(to), pageable);
+        return todoService.list(Optional.ofNullable(tag), Optional.ofNullable(from), Optional.ofNullable(to), pageable);
     }
 
     @PostMapping
-    public Todo create(@RequestBody Todo todo,
-                       @RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
-        return todoService.create(token, todo);
+    public Todo create(@RequestBody Todo todo) {
+        return todoService.create(todo);
     }
 
     @GetMapping("/{id}")
-    public Todo get(@PathVariable Integer id, @RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
-        return todoService.getWithToken(token, id);
+    public Todo get(@PathVariable Integer id) {
+        return todoService.get(id);
     }
 
     @PutMapping("/{id}")
