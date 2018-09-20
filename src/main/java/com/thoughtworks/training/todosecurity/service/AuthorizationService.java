@@ -5,6 +5,8 @@ import com.thoughtworks.training.todosecurity.model.User;
 import com.thoughtworks.training.todosecurity.repository.TokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -14,12 +16,14 @@ public class AuthorizationService {
     @Autowired
     private UserService userService;
 
+    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     @Autowired
     private TokenRepository tokenRepository;
 
     public String login(User user) {
         User userInDb = userService.getByName(user.getName());
-        if (!userInDb.getPassword().equals(user.getPassword())) {
+        if (!passwordEncoder.matches(user.getPassword(), userInDb.getPassword())) {
             throw new UnauthenticatedException();
         }
         return tokenRepository.create(userInDb);
