@@ -1,28 +1,45 @@
 package com.thoughtworks.training.todosecurity.repository;
 
+import com.thoughtworks.training.todosecurity.exception.UnauthenticatedException;
 import com.thoughtworks.training.todosecurity.model.User;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.stereotype.Repository;
 
-import java.util.Map;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
 public class TokenRepository {
-    private Map<String, Integer> tokenStore;
+
+    private static final byte[] SECRET_KEY = "my-secret".getBytes();
+
+    private static final String USER_ID_KEY = "userId";
 
     public TokenRepository() {
-        this.tokenStore = new ConcurrentHashMap<>();
     }
 
     public String create(User userInDb) {
-        String token = UUID.randomUUID().toString();
-        tokenStore.put("848e9685-2ad4-46f5-ad55-96a7e34d3c56", userInDb.getId());
-        return token;
+        return Jwts.builder()
+                .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
+                .claim("userId", userInDb.getId())
+                .setExpiration(Date.from(Instant.now().plus(1, ChronoUnit.DAYS)))
+                .compact();
     }
 
+
     public Optional<Integer> get(String token) {
-        return Optional.ofNullable(tokenStore.get(token));
+        try {
+            return Optional.ofNullable(Jwts.parser().setSigningKey(SECRET_KEY)
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .get(USER_ID_KEY, Integer.class));
+        } catch (JwtException e) {
+            // add exception details
+            throw new UnauthenticatedException(e.getMessage());
+        }
     }
 }
